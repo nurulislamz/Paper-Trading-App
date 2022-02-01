@@ -1,4 +1,0 @@
-ticker,price
-AAPL, 100
-GOOG, 200
-
