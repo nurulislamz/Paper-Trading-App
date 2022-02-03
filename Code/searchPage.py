@@ -1,6 +1,3 @@
-from email.policy import default
-from operator import ne
-from statistics import mean
 import pandas as pd 
 import datetime as dt # to get dates
 import yfinance as yf
@@ -8,11 +5,12 @@ import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
 
+import news
 from portfolioPage import validticker
 from metrics import finvizmetrics, yfmetrics, ratings, insider
-# search a stock
-import news
 from twitter import dfTweets
+
+# Used to display news dataframe
 def displayNews(df):
     fig = go.Figure(data=[go.Table(      
         columnwidth = [80,400],
@@ -25,19 +23,21 @@ def displayNews(df):
 
     return fig  
 
+# Used to display tweets dataframe
 def displayTweets(df):
     fig = go.Figure(data=[go.Table(      
         columnwidth = [200,200,400,100],
-        header=dict(values=['Date', 'UserName', 'Tweet', 'Likes_count'], height = 50,
+        header=dict(values=['Date', 'UserName', 'Tweet', 'nlikes'], height = 50,
                     align='left', fill_color='white', font=dict(color='black', size=25)),
-        cells=dict(values=[df.date, df.username, df.tweet, df.likes_count], height = 50,
+        cells=dict(values=[df.date, df.username, df.tweet, df.nlikes], height = 50,
                 align='left', fill_color='white', font=dict(color='black', size=20)))
     ])
     fig.update_layout(height = 1000)
 
     return fig  
 
-def stocksearch(ticker, n):
+# Used to plot stock prices and volume
+def stockplot(ticker, n):
     stock = yf.Ticker(ticker)
     start = dt.date.today()-dt.timedelta(days = n)
     price = stock.history(start=start)['Close']
@@ -62,12 +62,19 @@ def stocksearch(ticker, n):
     fig.update_layout(xaxis_title="Date", yaxis_title="Price", height = 1000)
     return fig
 
-def stocksearcher():
+# runs when searchPage is chosen
+def searchPage():
+    
     st.title("Search Page")
     st.header("Stock Graph and Metrics")
+    
     a, b = st.columns(2)
-    ticker = a.text_input("Enter ticker: ", value = 'AAPL',key = "1",)
-    n = b.number_input('Days:', min_value=7, max_value=9999, value=999, step=1)
+
+    # Search stocks
+    ticker = a.text_input("Enter ticker: ", value = 'AAPL',key = "1",) # Search ticker
+    n = b.number_input('Days:', min_value=7, max_value=9999, value=999, step=1) # Used for changing plot time scale in days
+
+    # Select which news/twitter source
     news_source = st.sidebar.selectbox(label = "News Source", options = ["Finviz", "Wall Street Journal", "Market Watch", "Forbes"])
     tweets_source = st.sidebar.selectbox(label = "Tweets Source: ", options = ["General Tweets", "Stock-ticker Tweets", "Verified Tweets", "News Tweets"])
     time_scale = None
@@ -78,16 +85,17 @@ def stocksearcher():
     if tweets_source == "Stock-ticker Tweets":
         time_scale = st.sidebar.selectbox(label = "Type: ", options = ["Recent Tweets", 'Popular Tweets'])
 
+    # Checks if the ticker is valid
     c,d = st.columns([4,1])
     if validticker(ticker):
-        metrics1 = yfmetrics(ticker)
-        global metrics2
-        metrics2 = finvizmetrics(ticker)
-        c.plotly_chart(stocksearch(ticker, n), use_container_width = True)
-    else:
+        metrics1 = yfmetrics(ticker)  # Creates yahoo metrics 
+        metrics2 = finvizmetrics(ticker) # Creates finviz metrics
+        c.plotly_chart(stockplot(ticker, n), use_container_width = True) # Creates plot
+    else: # Exits out of function if invalid
         st.write("Invalid ticker, try again.")
         st.image("stock image.png", caption="stonk")
-        return
+        return 0
+    
     
     d.metric(label = "", value = " ")
     d.metric(label = "", value = " ")
@@ -118,61 +126,12 @@ def stocksearcher():
     shortMet = col5.checkbox("Short Metrics")
     technicalMet = col6.checkbox("Technical Trading Metrics")
 
-    if profitMet:
-        # Profits 
-        col1.metric(label = "ROA", value = metrics2['52 Week High abs'], delta = metrics2["52W High"])
-        col2.metric(label = "ROE", value = metrics2['52 Week High abs'], delta = metrics2["52W High"])
-        col3.metric(label = "ROI", value = metrics2['52 Week High abs'], delta = metrics2["52W High"])
-        col4.metric(label = "Gross Margin", value = metrics2['52 Week High abs'], delta = metrics2["52W High"])
-        col5.metric(label = "Oper. Margin", value = metrics2['52 Week High abs'], delta = metrics2["52W High"])
-        col6.metric(label = "Profit Margin", value = metrics2['52 Week High abs'], delta = metrics2["52W High"])
-
-    if performanceMet:
-        # Performance delta
-        col1.metric(label = "52 Week High", value = metrics2['52 Week High abs'], delta = metrics2["52W High"])
-        col2.metric(label = "52 Week Low", value = metrics2['52 Week Low abs'], delta = metrics2["52W Low"])
-        col3.metric(label = "Weekly Performance", value = metrics2['Perf Week'])
-        col4.metric(label = "Monthly Performance", value = metrics2['Perf Month'])
-        col5.metric(label = "Quarter Performance", value = metrics2['Perf Quarter'])
-        col6.metric(label = "Yearly Performance", value = metrics2['Perf Year'])
-
-    if analystMet:
-        # Analyst Ratings
-        rating = ratings(ticker)
-        col1.metric(label = "Mean Target Price", value = metrics2['Target Price'], delta = float(metrics2["Target Price"]) - float(metrics2["Price"]))
-        col2.metric(label = "Analyst Recommendation (1 = Buy, 5 = Sell)", value = metrics2['Recom'])
-        col3.metric(label = "Positive Analyst Ratings", value = rating[0])
-        col4.metric(label = "Neutral Analyst Ratings", value = rating[1])
-        col5.metric(label = "Negative Analyst Ratings", value = rating[2])
-        col6.metric(label = "", value = " ")
-
-    if insiderMet:
-        # Insider stats
-        inside = insider(ticker)
-        col1.metric(label = "Insider Sell", value = inside[0])
-        col2.metric(label = "Insider Buy", value = inside[1])
-        col3.metric(label = "Insider Ownership", value = metrics2['Insider Own'], delta = metrics2["Insider Trans"])
-        col4.metric(label = "Institutional Ownership", value = metrics2['Inst Own'], delta = metrics2["Inst Trans"])
-        col5.metric(label = "", value = " ")
-        col6.metric(label = "", value = " ")
-
-    if shortMet:
-        # Shorts
-        col1.metric(label = "Short Float", value = metrics2['Short Float'])
-        col2.metric(label = "Short Ratio", value = metrics2['Short Ratio'])
-        col3.metric(label = "", value = "")
-        col4.metric(label = "", value = "")
-        col5.metric(label = "", value = "")
-        col6.metric(label = "", value = "")
-
-    if technicalMet:
-        # Technical Trading 
-        col1.metric(label = "SMA20", value = metrics2['SMA20'])
-        col2.metric(label = "SMA50", value = metrics2['SMA50'])
-        col3.metric(label = "SMA200", value = metrics2['SMA200'])
-        col4.metric(label = "RSI (14)", value = metrics2['RSI (14)'])
-        col5.metric(label = "Volatility", value = metrics2['Volatility'])
-        col6.metric(label = "", value = "")
+    if profitMet: profitMetrics(metrics2) # Performance Metrics
+    if performanceMet: performanceMetrics(metrics2)  # Performance Metrics
+    if analystMet: analystMetrics(metrics2, ticker) # Analyst Rating Metrics
+    if insiderMet: insiderMetrics(metrics2, ticker) # Insider Metrics
+    if shortMet: shortMetrics(metrics2) # Short Metrics
+    if technicalMet: technicalMetrics(metrics2) # Technical Trading Metrics
 
     col1, col2 = st.columns(2)
 
@@ -231,5 +190,58 @@ def stocksearcher():
         col2.plotly_chart(displayTweets(dfTweets(ticker, tweets_news).df), use_container_width = True)
         col2.header("Mean sentiment score: " + str(tweetdata.meanScore()))
 
+def profitMetrics(df):
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1.metric(label = "ROA", value = df['52 Week High abs'], delta = df["52W High"])
+    col2.metric(label = "ROE", value = df['52 Week High abs'], delta = df["52W High"])
+    col3.metric(label = "ROI", value = df['52 Week High abs'], delta = df["52W High"])
+    col4.metric(label = "Gross Margin", value = df['52 Week High abs'], delta = df["52W High"])
+    col5.metric(label = "Oper. Margin", value = df['52 Week High abs'], delta = df["52W High"])
+    col6.metric(label = "Profit Margin", value = df['52 Week High abs'], delta = df["52W High"])
 
-    
+def performanceMetrics(df):
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1.metric(label = "52 Week High", value = df['52 Week High abs'], delta = df["52W High"])
+    col2.metric(label = "52 Week Low", value = df['52 Week Low abs'], delta = df["52W Low"])
+    col3.metric(label = "Weekly Performance", value = df['Perf Week'])
+    col4.metric(label = "Monthly Performance", value = df['Perf Month'])
+    col5.metric(label = "Quarter Performance", value = df['Perf Quarter'])
+    col6.metric(label = "Yearly Performance", value = df['Perf Year'])
+
+def analystMetrics(df, ticker):
+    rating = ratings(ticker)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1.metric(label = "Mean Target Price", value = df['Target Price'], delta = float(df["Target Price"]) - float(df["Price"]))
+    col2.metric(label = "Analyst Recommendation (1 = Buy, 5 = Sell)", value = df['Recom'])
+    col3.metric(label = "Positive Analyst Ratings", value = rating[0])
+    col4.metric(label = "Neutral Analyst Ratings", value = rating[1])
+    col5.metric(label = "Negative Analyst Ratings", value = rating[2])
+    col6.metric(label = "", value = " ") # empty metrics for formatting purposes
+
+def insiderMetrics(df, ticker):
+    inside = insider(ticker)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1.metric(label = "Insider Sell", value = inside[0])
+    col2.metric(label = "Insider Buy", value = inside[1])
+    col3.metric(label = "Insider Ownership", value = df['Insider Own'], delta = df["Insider Trans"])
+    col4.metric(label = "Institutional Ownership", value = df['Inst Own'], delta = df["Inst Trans"])
+    col5.metric(label = "", value = " ")
+    col6.metric(label = "", value = " ")
+
+def shortMetrics(df):
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    col1.metric(label = "Short Float", value = df['Short Float'])
+    col2.metric(label = "Short Ratio", value = df['Short Ratio'])
+    col3.metric(label = "", value = "")
+    col4.metric(label = "", value = "")
+    col5.metric(label = "", value = "")
+    col6.metric(label = "", value = "")
+
+def technicalMetrics(df):
+    col1, col2, col3, col4, col5, col6 = st.columns(6) 
+    col1.metric(label = "SMA20", value = df['SMA20'])
+    col2.metric(label = "SMA50", value = df['SMA50'])
+    col3.metric(label = "SMA200", value = df['SMA200'])
+    col4.metric(label = "RSI (14)", value = df['RSI (14)'])
+    col5.metric(label = "Volatility", value = df['Volatility'])
+    col6.metric(label = "", value = "")

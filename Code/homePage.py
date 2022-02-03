@@ -1,41 +1,70 @@
 import streamlit as st
 import datetime as dt # to get dates
-import pandas_datareader.data as web # to get yahoo finance data
 import plotly.graph_objects as go  # used to plot data
+from plotly.subplots import make_subplots
+import streamlit as st
+import yfinance as yf
 
-def marketgraph(n):
-    SP500 = web.DataReader(['sp500'], 'fred',  start = dt.date.today()-dt.timedelta(days = n), end = dt.date.today())
+def marketgraph(timescale):
+    SP500 = yf.Ticker("^GSPC").history(start = dt.date.today()-dt.timedelta(days = timescale))
     SP500.dropna(inplace = True)
     
-    fig = go.Figure()
-
-    fig.add_trace(
+    fig = make_subplots(rows=2, cols=1, subplot_titles = ("Price", "Volume"))
+    
+    fig.append_trace(
     go.Scatter(
         x=SP500.index,
-        y=SP500["sp500"],
+        y=SP500["Close"],
         name = "sp500",
-    ))
+    ),row = 1, col = 1)
     
-    fig.update_layout(title = "SP500 Price", xaxis_title="Date", yaxis_title="Price")
+
+    fig.append_trace(
+    go.Bar(
+        x=SP500.index,
+        y=SP500['Volume']/100000,
+        name = "volume"
+    ),row = 2, col = 1)
+        
+    fig.update_xaxes(title_text="Date", row=1, col=1)
+    fig.update_xaxes(title_text="Date", row=2, col=1)
+    fig.update_yaxes(title_text="Price", row=1, col=1)
+    fig.update_yaxes(title_text="Volume", row=2, col=1)
+
+    fig.update_layout(title = "SP500", height = 1000)
     
     return fig
 
-def marketreturngraph(n):
-    SP500 = web.DataReader(['sp500'], 'fred',  start = dt.date.today()-dt.timedelta(days = n), end = dt.date.today())
-    SP500['daily_return'] = (SP500['sp500']/ SP500['sp500'].shift(1)) -1
+def marketreturngraph(timescale):
+    SP500 = yf.Ticker("^GSPC").history(start = dt.date.today()-dt.timedelta(days = timescale))
+    SP500['daily_return'] = (SP500['Close']/ SP500['Close'].shift(1)) - 1
+    SP500['daily_volume'] = (SP500['Volume']/ SP500['Volume'].shift(1)) - 1
     SP500.dropna(inplace=True)
 
-    fig = go.Figure()
-
-    fig.add_trace(
+    fig = make_subplots(rows=2, cols=1, subplot_titles = ("Daily Return", "Daily % Volume"))
+    
+    fig.append_trace(
     go.Scatter(
         x=SP500.index,
         y=SP500["daily_return"],
-        name = "sp500"
-    ))
+        name = "sp500",
+    ),row = 1, col = 1)
     
-    fig.update_layout(title = "SP500 Return", xaxis_title="Date", yaxis_title="Price")
 
+    fig.append_trace(
+    go.Bar(
+        x=SP500.index,
+        y=SP500['daily_volume']/100000,
+        name = "volume"
+    ),row = 2, col = 1)
+        
+    fig.update_xaxes(title_text="Date", row=1, col=1)
+    fig.update_xaxes(title_text="Date", row=2, col=1)
+    fig.update_yaxes(title_text="Price", row=1, col=1)
+    fig.update_yaxes(title_text="Volume", row=2, col=1)
+
+    fig.update_layout(title = "SP500", height = 1000)
+    
     return fig
 
 def homePage():

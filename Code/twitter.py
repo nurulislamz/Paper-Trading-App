@@ -2,31 +2,25 @@ import twint
 import yfinance as yf
 import pandas as pd
 import datetime as dt
-import os
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
-def tickerTocompany(ticker): # a bit slow 
-    company = yf.Ticker(ticker).info['longName']
-    return company.split()[0].lower().strip(",")
+from metrics import yfmetrics
 
+# creates a general query for twitter
 def general_query(ticker):
-    company_name = tickerTocompany(ticker)
+    company_name = yfmetrics(ticker).tickerTocompany()
     query = "({company_name} OR #{company_name})".format(company_name = company_name)
     return query
 
+# creates a stock twitter query for twitter
 def stock_query(ticker):
     query = "(${ticker} OR {ticker})".format(ticker = ticker)
     return query
 
-
-# note c.since does not work currently, date of data subject to twint but
-# to counteract this, i used c.filter and c.likes to remove less relevant data (created by bots or unpopular views)
 analyst  = ['CathieDWood']
 politicians = ['10DowningStreet', 'JoeBiden']
         
-        
-# note c.since does not work currently, date of data subject to twint but
-# to counteract this, i used c.filter and c.likes to remove less relevant data (created by bots or unpopular views)
+# used to obtain twitter data    
 class tweets:
     def __init__(self, ticker, source = None):
         self.ticker = ticker
@@ -34,20 +28,22 @@ class tweets:
         self.source = source
             
     # tweets about the company (not the stock)!!!
-    def generalTweets(self): # about one month of data
+    def generalTweets(self): 
         query = general_query(self.ticker) + " min_faves:5000" # uses company name/hashtag
         c = twint.Config()
         c.Search = query
         c.Lang = 'en'
-        c.Store_json = True
         c.Hide_output = True
-        c.Output = "generalTweets.json"
         c.Pandas = True
+        c.Since = str(dt.date.today() - dt.timedelta(days = 90)) 
         twint.run.Search(c)
+        data = twint.storage.panda.Tweets_df
         
-        return c.Output
+        return data # returns (roughly 1500 data points) 
     
     # ---  tweets about the company from here one  ---
+    
+    # tweets selected from popular news twitter accounts
     def newsTweets(self): # about a week of data
         c = twint.Config()
         news = ['CNBC','Benzinga', 'Stocktwits', '@MorningstarInc', 'FinancialTimes','WSJMarkets','MarketWatch', 'YahooFinance']
@@ -56,60 +52,58 @@ class tweets:
             c.Username = self.source 
             c.Search = self.query + " OR " + general_query(self.ticker) 
             c.Lang = 'en'
-            c.Store_json = True
             c.Hide_output = True
-            c.Output = self.source +".json"
             c.Pandas = True
             c.Since = str(dt.date.today() - dt.timedelta(days = 180)) 
-            c.Until = str(dt.date.today())
             twint.run.Search(c)
-            print(c.Search)
-            return c.Output
-        
+            data = twint.storage.panda.Tweets_df
+
+            return data # returns about a week of data (roughly 100 points for popular tickers)
+
+    # tweets from verified accounts only        
     def verifiedTweets(self): # 3 weeks of data
         c = twint.Config()
         query = self.query + " min_faves:500" + " filter:verified"
         c.Search = query
         c.Lang = 'en'
-        c.Store_json = True
         c.Hide_output = True
-        c.Output = "verifiedTweets.json"
         c.Pandas = True
+        c.Since = str(dt.date.today() - dt.timedelta(days = 40))
         twint.run.Search(c)
+        data = twint.storage.panda.Tweets_df
         
-        return c.Output
+        return data # roughly 3 weeks of data (500 data points)
     
-    def popularTweets(self): # a week of data roughly # 200 data points
+    # Popular tweets with over 500 likes 
+    def popularTweets(self): # 2 weeks of data # 200 data points roughly
         c = twint.Config()
         query = self.query + " min_faves:500"
         c.Search = query
         c.Lang = 'en'
-        c.Store_json = True
         c.Hide_output = True
-        c.Output = "weeklyTweets.json"
         c.Pandas = True
-        c.Since = str(dt.date.today() - dt.timedelta(days = 8)) 
-        c.Until = str(dt.date.today())
+        c.Since = str(dt.date.today() - dt.timedelta(days = 15)) 
         twint.run.Search(c)
+        data = twint.storage.panda.Tweets_df
         
-        return c.Output
+        return data # returns 1 week of data (roughly 200 data points)
     
-    # display most recent tweets # 300 data points
+    # display most recent tweets
     def recentTweets(self): # within two days 
         c = twint.Config()
         query = self.query + " min_faves:100"
         c.Search = query
         c.Lang = 'en'
-        c.Store_json = True
         c.Hide_output = True
         c.Output = "recentTweets.json"
         c.Pandas = True
         c.Since = str(dt.date.today() - dt.timedelta(days = 3)) 
-        c.Until = str(dt.date.today())
         twint.run.Search(c)
+        data = twint.storage.panda.Tweets_df
         
-        return c.Output
+        return data # returns tweets from last two days (roughly 300 data points)
 
+# works with tweet function to create dataframe from extracted JSON file
 class dfTweets:
     def __init__(self, ticker, source):
         self.ticker = ticker
@@ -118,35 +112,32 @@ class dfTweets:
         news = ['CNBC','Benzinga', 'Stocktwits', 'MorningstarInc', 'FinancialTimes','WSJMarkets','MarketWatch', 'YahooFinance']
         self.ticker = ticker
         if source == "recent":
-            self.json = tweets(ticker).recentTweets()
+            data = tweets(ticker).recentTweets()
         elif source == "popular":
-            self.json = tweets(ticker).popularTweets()
+            data = tweets(ticker).popularTweets()
         elif source == "verified":
-            self.json = tweets(ticker).verifiedTweets()
+            data = tweets(ticker).verifiedTweets()
         elif source == "general":
-            self.json = tweets(ticker).generalTweets()
+            data = tweets(ticker).generalTweets()
         elif source in news:
-            self.json = tweets(ticker, source).newsTweets()
+            data = tweets(ticker, source).newsTweets()
         else:
             print("invalid scale")
-    
-        try:
-            data = pd.read_json(self.json, lines = True)
-        except:
-            print("empty table")
-            return
+          
+        # saves data as a dataframe to display
+        if {'date', 'time'}.issubset(data.columns):
+            data["date"] = data["date"].astype(str) + " " + data["time"]
         
-        data["date"] = data["date"].astype(str) + " " + data["time"]
-        data = data[["date", "username", "tweet", "likes_count"]]
+        data = data[["date", "username", "tweet", "nlikes"]]
         self.df = data
-
-        # Sentiment Analysis
+            
+      # Sentiment Analysis
         analyzer = SentimentIntensityAnalyzer()
         scores = data['tweet'].apply(analyzer.polarity_scores).tolist()  
         scores = pd.DataFrame(scores)
         data = data.join(scores, rsuffix='_right')
         # weighted scores by using likes and sentiment
-        data['scores'] = data['compound']*((data['likes_count'])/(data['likes_count']).mean()) # scews data too much
+        data['scores'] = data['compound']*((data['nlikes'])/(data['nlikes']).mean()) # scews data too much
         self.df_scores = data
         
     def meanScore(self):
@@ -157,14 +148,4 @@ class dfTweets:
         print("Recent tweets from " + self.source)
         for i in range(5):
             print(self.df.tweet[i] + " (" + str(self.df.date[i]) + ")")
-
-def clearfiles():
-    paths = ['recentTweets.json', 'weeklyTweets.json', 'verifiedTweets.json', 'generalTweets.json', 'CNBC.json',
-             'Benzinga.json', 'Stocktwits.json', '@MorningstarInc.json', 'FinancialTimes.json', 'WSJMarkets.json',
-             'MarketWatch.json', 'YahooFinance.json'] 
-
-    for path in paths:
-        if os.path.exists(path):
-            os.remove(path)
-        else:
-            print("Can not delete the file as it doesn't exists")
+            

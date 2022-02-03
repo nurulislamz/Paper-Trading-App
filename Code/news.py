@@ -2,9 +2,8 @@
 import numpy as np 
 import pandas as pd 
 import datetime as dt # to get dates
-import pandas_datareader.data as web # to get yahoo finance data
 import streamlit as st
-import re # regex patterns
+# import re # regex patterns
 
 # data scraping
 from bs4 import BeautifulSoup # parsses html/xml web data
@@ -12,6 +11,7 @@ import requests
 
 # sentiment analysis
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
 
 class MarketWatch:
     def __init__(self, ticker):
@@ -66,6 +66,7 @@ class MarketWatch:
         for i in range(10):
             st.write(self.df.Headlines[i] + " (" + self.df.Date[i] + ")")
 
+    # returns mean score of sentiment analysis
     def meanScore(self):
         mean = round(self.df_scores['compound'].mean(), 2)
         return mean
@@ -110,6 +111,7 @@ class Forbes:
         for i in range(10):
             st.write(self.df.Headlines[i] + " (" + self.df.Date[i] + ")")
 
+    # returns mean score of sentiment analysis
     def meanScore(self):
         mean = round(self.df_scores['compound'].mean(), 2)
         return mean
@@ -154,6 +156,7 @@ class wsj:
         for i in range(10):
             st.write(self.df.Headlines[i] + " (" + self.df.Date[i] + ")")
 
+    # returns mean score of sentiment analysis
     def meanScore(self):
         mean = round(self.df_scores['compound'].mean(), 2)
         return mean
@@ -166,16 +169,19 @@ class finviz:
         finwiz_url = 'https://finviz.com/quote.ashx?t=' + self.ticker
         header = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36'}
 
+        # data fetch
         r = requests.get(url=finwiz_url,headers=header) 
         html = BeautifulSoup(r.text, features="lxml")
         news_table = html.find(id='news-table')
         df_tr = news_table.findAll('tr')
 
+        # data cleaning
         news_data = [news.a.text for news in df_tr]
         news_date = [news.td.text.split() for news in df_tr]
         news_time = [time[0] if len(time) == 1 else time[1] for time in news_date]
         news_date = [date[0] if len(date) != 1 else np.nan for date in news_date ]
 
+        # dataframe
         df = pd.DataFrame({'Headlines': news_data, 'Date': news_date, 'Time': news_time})
         df = df.ffill(axis=0)
         
@@ -195,7 +201,8 @@ class finviz:
         st.subheader("Recent Headlines from Finviz: " + self.ticker)
         for i in range(10):
             st.write(self.df.Headlines[i] + " (" + self.df.Date[i] + ")")
-
+    
+    # returns mean score of sentiment analysis
     def meanScore(self):
         mean = round(self.df_scores['compound'].mean(), 2)
         return mean

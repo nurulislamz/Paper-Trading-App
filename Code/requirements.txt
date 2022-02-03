@@ -1,9 +1,5 @@
-streamlit # to present data in webapp
-pandas # data manipulation
-numpy # data manipulation
-datetime #
-requests # get web data
-BeautifulSoup # web scraping
-tweepy # get twitter data
-yfinance # get data from yahoo finance
-plotly # plot data
+streamlit
+pandas
+plotly 
+requests
+tweepy

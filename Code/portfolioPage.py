@@ -1,13 +1,12 @@
 import streamlit as st
-import pandas_datareader as web
 import datetime as dt
+import yfinance as yf
 
 def validticker(ticker): # checks if a ticker is valid
-    try: 
-        web.get_data_yahoo(symbols=ticker, start = dt.date.today() - dt.timedelta(days=5))
-        return True
-    except:
+    if yf.Ticker(ticker).info['regularMarketPrice'] == None:
         return False
+    else:
+        return True
 
 def portfolioPage():
     st.title("Portfolio Page")
