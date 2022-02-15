@@ -73,4 +73,3 @@ def homePage():
    
     st.plotly_chart(marketgraph(150))
     st.plotly_chart(marketreturngraph(150))
-

@@ -3,6 +3,7 @@ import streamlit as st
 from homePage import homePage
 from portfolioPage import portfolioPage
 from searchPage import searchPage
+from statementPage import statementPage
 
 st.set_page_config(layout="wide")
 
@@ -35,6 +36,8 @@ app = MultiPage()
 app.add_page("Home", homePage)
 app.add_page("Portfolio", portfolioPage)
 app.add_page("Stock Search", searchPage) 
+app.add_page("Financial Statements", statementPage) 
+
 # add.app_page("Mean Reversion", reversion .app)
 # app.add_page("Forcasting", machine_learning.app)
 

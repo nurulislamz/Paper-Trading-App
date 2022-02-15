@@ -190,6 +190,8 @@ def searchPage():
         col2.plotly_chart(displayTweets(dfTweets(ticker, tweets_news).df), use_container_width = True)
         col2.header("Mean sentiment score: " + str(tweetdata.meanScore()))
 
+
+
 def profitMetrics(df):
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     col1.metric(label = "ROA", value = df['52 Week High abs'], delta = df["52W High"])
