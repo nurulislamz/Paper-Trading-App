@@ -1,6 +1,8 @@
 # SentimentAnalysisofStock
 Sentiment Analysis of any searched stocks using data scraped from twitter and popular news websites such as CNBC.
 
+# Twitter sentiment analysis report 
+
 # Search Page
 Functionality includes:
 - Get current prices, volume and popular metrics
@@ -13,10 +15,17 @@ Functionality includes:
 - Display all data using streamlit in a web app.
 - Machine learning classifier using logistic regression (60% average rate)
 
+# Portfolio Page
+- Allows you to keep track of your portfolio by uploading JSON/txt file. 
+- Allows for paper-trading functionality with current stock prices and volume information. 
+- Returns performance analysis, ROI and stock portfolio weightings. 
+
+# Financial Statement Page 
+- Utilises web scraping to display financial statement data from last 4 quarters for any ticker.
+
 
 # Upcoming Pages
 - Market Analysis
-- Portfolio Page
-- - Allows you to add your own stocks and quantities
+
 - Improved machine learning classifier utilising cross-validation testings of multiple different classification algorithms.
 - 
