@@ -26,6 +26,4 @@ Functionality includes:
 
 # Upcoming Pages
 - Market Analysis
-
 - Improved machine learning classifier utilising cross-validation testings of multiple different classification algorithms.
-- 
