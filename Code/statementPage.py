@@ -9,7 +9,7 @@ import requests
 from portfolioPage import validticker
 def statementPage():
     # Search stocks
-    ticker = st.text_input("Enter ticker: ", value = 'AAPL',key = "1",) # Search ticker
+    ticker = st.text_input("Enter ticker: ", value = 'msft',key = "1",) # Search ticker
 
     if validticker(ticker):
         st.table(incomeStatement(ticker))

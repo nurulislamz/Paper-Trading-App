@@ -48,6 +48,7 @@ class MarketWatch:
 
         # dataframe
         df = pd.DataFrame({'Headlines': news_data, 'Date': news_date})
+        df['Date'] = df.Date.astype({'Date': 'datetime64[ns]'}) # converts date to dt.date type
         df = df.dropna()
 
         self.df = df
@@ -61,26 +62,19 @@ class MarketWatch:
         
         # removing neutral scores as they reduce sentiment mean
         df_scores = df_scores[df_scores['compound'] != 0]
-
-        # standardised scores
-        standard_scores = zscore(df_scores["compound"])
-        # cdf of those values # note that for negative values, we use the cdf such that Pr(X>x) whilst for positive we use the standard Pr(X<x)
-        # note =: cdf used over pdf as it gives more easily interpretable values, for negative values i use a suitable transformation to mantain this interpretability
-        df_scores['standard_cdf'] = standard_scores.apply(lambda x: norm(0,1).cdf(x) if x>0 else -(1-norm(0,1).cdf(x)))
+        df_scores = df_scores.groupby(df_scores.Date.dt.date).mean()   
 
         self.df_scores = df_scores
+
+    def meanScore(self):
+        # gets the mean sentiment score of that each days news
+        return self.df_scores['compound'].median() 
 
     def recentHeadlines(self):
         # Recent Headlines
         st.subheader("Recent Headlines from Market Watch: " + self.ticker)
         for i in range(10):
             st.write(self.df.Headlines[i] + " (" + self.df.Date[i] + ")")
-
-    # returns median score of sentiment analysis
-    def meanScore(self):
-        # median is used as most scores is concentrated around neutrality
-        mean = round(self.df_scores['standard_cdf'].median(), 2)
-        return mean
 
 class Forbes:
     def __init__(self, company):
@@ -102,7 +96,7 @@ class Forbes:
         news_date = [news.text for news in news_date]
 
         df = pd.DataFrame({'Headlines': news_data, 'Date': news_date})
-        
+
         # dataframe
         self.df = df
         
@@ -115,24 +109,17 @@ class Forbes:
         
         # removing neutral scores as they reduce sentiment mean
         df_scores = df_scores[df_scores['compound'] != 0]
-
-        # standardised scores
-        standard_scores = zscore(df_scores["compound"])
-        # cdf of those values # note that for negative values, we use the cdf such that Pr(X>x) whilst for positive we use the standard Pr(X<x)
-        df_scores['standard_cdf'] = standard_scores.apply(lambda x: norm(0,1).cdf(x) if x>0 else -(1-norm(0,1).cdf(x)))
-
         self.df_scores = df_scores
+
+    def meanScore(self):
+        # gets the mean sentiment score of that days news
+        return self.df_scores['compound'].median()     
 
     def recentHeadlines(self):
         # Recent Headlines
         st.subheader("Recent Headlines from Forbes: " + self.company)
         for i in range(10):
             st.write(self.df.Headlines[i] + " (" + self.df.Date[i] + ")")
-
-    # returns median score of sentiment analysis
-    def meanScore(self):
-        mean = round(self.df_scores['standard_cdf'].median(), 2)
-        return mean
         
 class wsj:
     def __init__(self, ticker):
@@ -167,23 +154,17 @@ class wsj:
          # removing neutral scores as they reduce sentiment mean
         df_scores = df_scores[df_scores['compound'] != 0]
 
-        # standardised scores
-        standard_scores = zscore(df_scores["compound"])
-        # cdf of those values # note that for negative values, we use the cdf such that Pr(X>x) whilst for positive we use the standard Pr(X<x)
-        df_scores['standard_cdf'] = standard_scores.apply(lambda x: norm(0,1).cdf(x) if x>0 else -(1-norm(0,1).cdf(x)))
-
         self.df_scores = df_scores
+
+    def meanScore(self):
+        # gets the mean sentiment score of that days news
+        return self.df_scores['compound'].median() 
 
     def recentHeadlines(self):
         # Recent Headlines
         st.subheader("Recent Headlines from Wall Street Journal: " + self.ticker)
         for i in range(10):
             st.write(self.df.Headlines[i] + " (" + self.df.Date[i] + ")")
-
-    # returns median score of sentiment analysis
-    def meanScore(self):
-        mean = round(self.df_scores['standard_cdf'].median(), 2)
-        return mean
 
 class finviz:
     def __init__(self, ticker = "aapl"):
@@ -207,6 +188,7 @@ class finviz:
 
         # dataframe
         df = pd.DataFrame({'Headlines': news_data, 'Date': news_date, 'Time': news_time})
+        df['Date'] = df.Date.astype({'Date': 'datetime64[ns]'}) # converts date to dt.date type
         df = df.ffill(axis=0)
         
         self.df = df
@@ -214,27 +196,20 @@ class finviz:
         # Sentiment Analysis
         analyzer = SentimentIntensityAnalyzer()
         scores = df['Headlines'].apply(analyzer.polarity_scores).tolist()
-
         df_scores = pd.DataFrame(scores)
         df_scores = df.join(df_scores, rsuffix='_right')
         
         # removing neutral scores as they reduce sentiment mean
         df_scores = df_scores[df_scores['compound'] != 0]
-
-        # standardised scores
-        standard_scores = zscore(df_scores["compound"])
-        # cdf of those values # note that for negative values, we use the cdf such that Pr(X>x) whilst for positive we use the standard Pr(X<x)
-        df_scores['standard_cdf'] = standard_scores.apply(lambda x: norm(0,1).cdf(x) if x>0 else -(1-norm(0,1).cdf(x)))
-
-        self.df_scores = df_scores      
+        df_scores = df_scores.groupby(df_scores.Date.dt.date).mean()   
+        self.df_scores = df_scores
+        
+    def meanScore(self):
+        # gets the mean sentiment score of that days tweets
+        return self.df_scores['compound'].median()    
 
     def recentHeadlines(self):
         # Recent Headlines
         st.subheader("Recent Headlines from Finviz: " + self.ticker)
         for i in range(10):
             st.write(self.df.Headlines[i] + " (" + self.df.Date[i] + ")")
-    
-    # returns mean score of sentiment analysis
-    def meanScore(self):
-        mean = round(self.df_scores['standard_cdf'].median(), 2)
-        return mean

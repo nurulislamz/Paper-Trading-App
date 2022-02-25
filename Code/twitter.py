@@ -3,6 +3,8 @@ import yfinance as yf
 import pandas as pd
 import datetime as dt
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import numpy as np
+from scipy.stats import norm
 
 from metrics import yfmetrics
 
@@ -122,30 +124,39 @@ class dfTweets:
         elif source in news:
             data = tweets(ticker, source).newsTweets()
         else:
-            print("invalid scale")
+            return ("invalid scale")
           
         # saves data as a dataframe to display
         if {'date', 'time'}.issubset(data.columns):
             data["date"] = data["date"].astype(str) + " " + data["time"]
         
+        data['date'] = data.date.astype({'date': 'datetime64[ns]'}) # converts date to dt.date type
         data = data[["date", "username", "tweet", "nlikes"]]
         self.df = data
-            
-      # Sentiment Analysis
+
+        # Sentiment Analysis
         analyzer = SentimentIntensityAnalyzer()
         scores = data['tweet'].apply(analyzer.polarity_scores).tolist()  
         scores = pd.DataFrame(scores)
-        data = data.join(scores, rsuffix='_right')
-        # weighted scores by using likes and sentiment
-        data['scores'] = data['compound']*((data['nlikes'])/(data['nlikes']).mean()) # scews data too much
-        self.df_scores = data
+        df_scores = data.join(scores, rsuffix='_right')
+        # weighted scores by using log transformation of likes multiplied by sentiment scores
+        df_scores['scores'] = df_scores['compound']*np.log(df_scores['nlikes'])
         
+        # applying normal distribution
+        standard_scores = (df_scores['scores']-df_scores['scores'].mean())/df_scores['scores'].std()
+        df_scores['scores'] = standard_scores.apply(lambda x: norm.cdf(x) if x>0 else -(1-norm.cdf(x)))
+        
+        # gets the mean sentiment score of that days tweets
+        df_scores = df_scores.groupby(df_scores.date.dt.date).mean()   
+
+        self.df_scores = df_scores
+
     def meanScore(self):
-        return self.df_scores['scores'].mean()
+        return self.df_scores['scores'].median()    
 
     def recentTweets(self):
         # Recent Headlines
         print("Recent tweets from " + self.source)
         for i in range(5):
-            print(self.df.tweet[i] + " (" + str(self.df.date[i]) + ")")
+            print(self.df.tweet[i] + " (" + str(self.df.dates[i]) + ")")
             

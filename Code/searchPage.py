@@ -1,3 +1,4 @@
+from turtle import width
 import pandas as pd 
 import datetime as dt # to get dates
 import yfinance as yf
@@ -7,60 +8,9 @@ import plotly.graph_objects as go
 
 import news
 from portfolioPage import validticker
-from metrics import finvizmetrics, yfmetrics, ratings, insider
+from metrics import finvizmetrics, yfmetrics
 from twitter import dfTweets
-
-# Used to display news dataframe
-def displayNews(df):
-    fig = go.Figure(data=[go.Table(      
-        columnwidth = [80,400],
-        header=dict(values=['Date', 'Headlines'], height = 50,
-                    align='left', fill_color='white', font=dict(color='black', size=25)),
-        cells=dict(values=[df.Date, df.Headlines], height = 50,
-                align='left', fill_color='white', font=dict(color='black', size=20)))
-    ])
-    fig.update_layout(height = 1000)
-
-    return fig  
-
-# Used to display tweets dataframe
-def displayTweets(df):
-    fig = go.Figure(data=[go.Table(      
-        columnwidth = [200,200,400,100],
-        header=dict(values=['Date', 'UserName', 'Tweet', 'nlikes'], height = 50,
-                    align='left', fill_color='white', font=dict(color='black', size=25)),
-        cells=dict(values=[df.date, df.username, df.tweet, df.nlikes], height = 50,
-                align='left', fill_color='white', font=dict(color='black', size=20)))
-    ])
-    fig.update_layout(height = 1000)
-
-    return fig  
-
-# Used to plot stock prices and volume
-def stockplot(ticker, n):
-    stock = yf.Ticker(ticker)
-    start = dt.date.today()-dt.timedelta(days = n)
-    price = stock.history(start=start)['Close']
-    volume = stock.history(start=start)['Volume']
-
-    fig = go.Figure()
-
-    fig.add_trace(
-    go.Scatter(
-        x=price.index,
-        y=price,
-        name = 'price'
-    ))
-
-    fig.add_trace(
-        go.Bar(
-        x=volume.index,
-        y=volume/1000000,
-        name = "volume"
-    ))
-     
-    fig.update_layout(xaxis_title="Date", yaxis_title="Price", height = 1000)
-    return fig
+from metricButtons import metricButtons
 
 # runs when searchPage is chosen
 def searchPage():
@@ -126,12 +76,12 @@ def searchPage():
     shortMet = col5.checkbox("Short Metrics")
     technicalMet = col6.checkbox("Technical Trading Metrics")
 
-    if profitMet: profitMetrics(metrics2) # Performance Metrics
-    if performanceMet: performanceMetrics(metrics2)  # Performance Metrics
-    if analystMet: analystMetrics(metrics2, ticker) # Analyst Rating Metrics
-    if insiderMet: insiderMetrics(metrics2, ticker) # Insider Metrics
-    if shortMet: shortMetrics(metrics2) # Short Metrics
-    if technicalMet: technicalMetrics(metrics2) # Technical Trading Metrics
+    if profitMet: metricButtons.profitMetrics(metrics2, value=True) # Performance Metrics
+    if performanceMet: metricButtons.performanceMetrics(metrics2)  # Performance Metrics
+    if analystMet: metricButtons.analystMetrics(metrics2, ticker,value=True) # Analyst Rating Metrics
+    if insiderMet: metricButtons.insiderMetrics(metrics2, ticker,value=True) # Insider Metrics
+    if shortMet: metricButtons.shortMetrics(metrics2) # Short Metrics
+    if technicalMet: metricButtons.technicalMetrics(metrics2) # Technical Trading Metrics
 
     col1, col2 = st.columns(2)
 
@@ -191,59 +141,54 @@ def searchPage():
         col2.header("Mean sentiment score: " + str(tweetdata.meanScore()))
 
 
+# Used to display news dataframe
+def displayNews(df):
+    fig = go.Figure(data=[go.Table(      
+        columnwidth = [80,400],
+        header=dict(values=['Date', 'Headlines'], height = 50,
+                    align='left', fill_color='white', font=dict(color='black', size=25)),
+        cells=dict(values=[df.Date, df.Headlines], height = 30,
+                align='left', fill_color='white', font=dict(color='black', size=20)))
+    ])
+    fig.update_layout(height = 1000)
 
-def profitMetrics(df):
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    col1.metric(label = "ROA", value = df['52 Week High abs'], delta = df["52W High"])
-    col2.metric(label = "ROE", value = df['52 Week High abs'], delta = df["52W High"])
-    col3.metric(label = "ROI", value = df['52 Week High abs'], delta = df["52W High"])
-    col4.metric(label = "Gross Margin", value = df['52 Week High abs'], delta = df["52W High"])
-    col5.metric(label = "Oper. Margin", value = df['52 Week High abs'], delta = df["52W High"])
-    col6.metric(label = "Profit Margin", value = df['52 Week High abs'], delta = df["52W High"])
+    return fig  
 
-def performanceMetrics(df):
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    col1.metric(label = "52 Week High", value = df['52 Week High abs'], delta = df["52W High"])
-    col2.metric(label = "52 Week Low", value = df['52 Week Low abs'], delta = df["52W Low"])
-    col3.metric(label = "Weekly Performance", value = df['Perf Week'])
-    col4.metric(label = "Monthly Performance", value = df['Perf Month'])
-    col5.metric(label = "Quarter Performance", value = df['Perf Quarter'])
-    col6.metric(label = "Yearly Performance", value = df['Perf Year'])
+# Used to display tweets dataframe
+def displayTweets(df):
+    fig = go.Figure(data=[go.Table(      
+        columnwidth = [200,200,400,100],
+        header=dict(values=['Date', 'UserName', 'Tweet', 'nlikes'], height = 50,
+                    align='left', fill_color='white', font=dict(color='black', size=25)),
+        cells=dict(values=[df.date, df.username, df.tweet, df.nlikes], height = 30,
+                align='left', fill_color='white', font=dict(color='black', size=20)))
+    ])
+    fig.update_layout(height = 1000)
 
-def analystMetrics(df, ticker):
-    rating = ratings(ticker)
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    col1.metric(label = "Mean Target Price", value = df['Target Price'], delta = float(df["Target Price"]) - float(df["Price"]))
-    col2.metric(label = "Analyst Recommendation (1 = Buy, 5 = Sell)", value = df['Recom'])
-    col3.metric(label = "Positive Analyst Ratings", value = rating[0])
-    col4.metric(label = "Neutral Analyst Ratings", value = rating[1])
-    col5.metric(label = "Negative Analyst Ratings", value = rating[2])
-    col6.metric(label = "", value = " ") # empty metrics for formatting purposes
+    return fig  
 
-def insiderMetrics(df, ticker):
-    inside = insider(ticker)
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    col1.metric(label = "Insider Sell", value = inside[0])
-    col2.metric(label = "Insider Buy", value = inside[1])
-    col3.metric(label = "Insider Ownership", value = df['Insider Own'], delta = df["Insider Trans"])
-    col4.metric(label = "Institutional Ownership", value = df['Inst Own'], delta = df["Inst Trans"])
-    col5.metric(label = "", value = " ")
-    col6.metric(label = "", value = " ")
+# Used to plot stock prices and volume
+def stockplot(ticker, n):
+    stock = yf.Ticker(ticker)
+    start = dt.date.today()-dt.timedelta(days = n)
+    price = stock.history(start=start)['Close']
+    volume = stock.history(start=start)['Volume']
 
-def shortMetrics(df):
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    col1.metric(label = "Short Float", value = df['Short Float'])
-    col2.metric(label = "Short Ratio", value = df['Short Ratio'])
-    col3.metric(label = "", value = "")
-    col4.metric(label = "", value = "")
-    col5.metric(label = "", value = "")
-    col6.metric(label = "", value = "")
+    fig = go.Figure()
 
-def technicalMetrics(df):
-    col1, col2, col3, col4, col5, col6 = st.columns(6) 
-    col1.metric(label = "SMA20", value = df['SMA20'])
-    col2.metric(label = "SMA50", value = df['SMA50'])
-    col3.metric(label = "SMA200", value = df['SMA200'])
-    col4.metric(label = "RSI (14)", value = df['RSI (14)'])
-    col5.metric(label = "Volatility", value = df['Volatility'])
-    col6.metric(label = "", value = "")
+    fig.add_trace(
+    go.Scatter(
+        x=price.index,
+        y=price,
+        name = 'price'
+    ))
+
+    fig.add_trace(
+        go.Bar(
+        x=volume.index,
+        y=volume/1000000,
+        name = "volume"
+    ))
+     
+    fig.update_layout(xaxis_title="Date", yaxis_title="Price", height = 1000)
+    return fig

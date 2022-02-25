@@ -1,6 +1,0 @@
-ticker,Unnamed: 0,invested,average_price,quantity,currprice,net+-,change
-aapl, , 2000, 400,5,
-goog, , 2000, 200,7,
-msft, , 2000, 100,10,
-zm, , 2000, 50,6,
-ntfx, , 2000, 300,3,

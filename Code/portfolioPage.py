@@ -1,5 +1,3 @@
-from matplotlib import ticker
-from matplotlib.style import use
 import streamlit as st
 import datetime as dt
 import yfinance as yf
@@ -8,54 +6,54 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 from metrics import yfmetrics
-
-def displayPortfolio(df):
-    fig = go.Figure(data=[go.Table(      
-        columnwidth = [80,400],
-        header=dict(values=['Ticker', 'Invested', 'Average Price', 'Quantity'], height = 50,
-                    align='left', fill_color='white', font=dict(color='black', size=25)),
-        cells=dict(values=[df.index, df.invested, df.average_price, df.quantity], height = 50,
-                align='left', fill_color='white', font=dict(color='black', size=20)))
-    ])
-    fig.update_layout(height = 1000)
-
-    return fig  
-
+from userportfolio import userPortfolio, userData
 def portfolioPage():
     st.title("Portfolio Page")
     st.header("Stock Portfolio")
-    
-    portfolio = readPortfolio()
 
     a, b, c = st.columns(3)
     
     # Search stocks
     ticker = a.text_input("Enter ticker: ", value = 'AAPL',key = "1",) # Search ticker
     price = b.text_input("Enter price: ", value = float(yfmetrics(ticker).currprice().strip("USD")),key = "1",) # Search ticker
-    quantity = c.text_input("Enter price: ", value = 1,key = "1",) # Search ticker
+    quantity = c.text_input("Enter quantity: ", value = 1,key = "1",) # Search ticker
 
     d, e = st.columns(2)
     buy = d.button("Buy")
     sell = e.button("Sell")
 
-    st.plotly_chart(allstocks(999,portfolio), use_container_width=True)
-    st.plotly_chart(portratio(portfolio), use_container_width=True)
-    st.plotly_chart(displayPortfolio(portfolio), use_container_width=True)
+    portfolio = userPortfolio("nurul123")
+    balance = userData("nurul123")
 
     if validticker(ticker):
         if buy:
-            buyPortfolio(ticker, float(price), float(quantity))
-            update_port(portfolio)
-            save_port(portfolio)
-        elif sell:
-            sellPortfolio(ticker, float(price), float(quantity))
-            update_port(portfolio)
-            save_port(portfolio)
-        else: 
-            return
-
-def balance():
-    pass
+            portfolio.buyStock(ticker, float(price), float(quantity))
+            portfolio.updateStocks()
+        if sell:
+            portfolio.sellStock(ticker, float(price), float(quantity))
+            portfolio.updateStocks()
+    else: 
+        st.write("Invalid ticker")
+    
+    f,g = st.columns([4,1])
+    f.plotly_chart(allstocks(portfolio.portfolio), use_container_width=True)
+    
+    g.metric(label = "", value = " ")
+    g.metric(label = "", value = " ")
+    g.metric(label = "Deposit", value = "£" + (str(balance.view_user_deposit())))
+    g.metric(label = "Balance", value = "£" + (str(balance.view_user_balance())))
+    g.metric(label = "Portfolio Value", value = "£" + (str(balance.portfolio_assets())))    
+    g.metric(label = "Return on Investment", value = (str(balance.roi())))
+    deposit = g.number_input('Deposit Money:', min_value=10, value=500, step=50) # Used for changing plot time scale in days
+    balance.add_deposit(deposit)
+    g.subheader("Recent Transactions: ")
+    for i in balance.transaction_history()[::-1]:
+        g.text(i)
+    
+    f,g = st.columns([3 ,2])
+    f.plotly_chart(portratio(portfolio.portfolio), use_container_width=True)
+    g.write(portfolio.portfolio)
+   # g.plotly_chart(displayPortfolio(portfolio.portfolio), use_container_width=True)
 
 def validticker(ticker): # checks if a ticker is valid
     if yf.Ticker(ticker).info['regularMarketPrice'] == None:
@@ -63,51 +61,18 @@ def validticker(ticker): # checks if a ticker is valid
     else:
         return True
 
-# reads portfolio file if it doesnt exist, else creates one
-def readPortfolio():
-    try:
-        portfolio = pd.read_csv("portfolio.txt") 
-    except FileNotFoundError:  
-        df = {'ticker': [],
-               'invested': [], 
-              'average_price': [],
-               'quantity': []}
-        portfolio = pd.DataFrame(df)
-        portfolio.to_csv("portfolio.txt", index = False)
-    portfolio = portfolio.set_index("ticker")
-    return portfolio
+def displayPortfolio(df):
+    fig = go.Figure(data=[go.Table(      
+        columnwidth = [80,400],
+        header=dict(values=['Ticker', 'Invested', 'Average Price', 'Quantity', 'Current Price', 'Net Gain/Loss', 'Change'], height = 50,
+                    align='left', fill_color='white', font=dict(color='black', size=25)),
+        cells=dict(values=[df.index, df.invested, df.average_price, df.quantity, df.currprice, df['net+-'], df.change], height = 30,
+                align='left', fill_color='white', font=dict(color='black', size=20)))
+    ])
+    fig.update_layout(height = 400)
+    return fig  
 
-portfolio = readPortfolio()
-
-def buyPortfolio(ticker, quantity, price, portfolio = portfolio):
-    if ticker not in portfolio.index:
-        portfolio.loc[ticker] = 0
-    investment = price*quantity
-    portfolio.loc[ticker]['quantity'] += quantity
-    portfolio.loc[ticker]['invested'] += investment
-    portfolio.loc[ticker]['average_price'] = portfolio.loc[ticker]['invested']/portfolio.loc[ticker]['quantity']
-
-def sellPortfolio(ticker, quantity, price, portfolio = portfolio):
-    if ticker not in portfolio.index:
-        print("do not own stock")
-        return 
-    withdrawal = price*quantity
-    portfolio.loc[ticker]['quantity'] -= quantity        
-    portfolio.loc[ticker]['invested'] -= withdrawal
-    if portfolio.loc[ticker]['quantity'] <= 0:
-          portfolio.loc[ticker] = 0
-    else:
-        portfolio.loc[ticker]['average_price'] = portfolio.loc[ticker]['invested']/portfolio.loc[ticker]['quantity']
-
-def update_port(portfolio = portfolio): # updates the portfolio with data
-    portfolio["currprice"] = portfolio.index.map(lambda x: float(yfmetrics(ticker).currprice().strip("USD")))
-    portfolio["net+-"] = round(((portfolio.currprice/portfolio.average_price)-1)*100,2).astype(str) + "%"
-    portfolio["change"] = portfolio.index.map(lambda x: yfmetrics(ticker).deltaprice())
-
-def save_port(portfolio = portfolio): # saves portfolio data back to csv
-    portfolio.to_csv("portfolio.txt")
-
-def allstocks(timescale = 999,portfolio = portfolio):
+def allstocks(portfolio, timescale = 999):
     fig = go.Figure()
 
     for ticker in portfolio.index:
@@ -133,8 +98,7 @@ def allstocks(timescale = 999,portfolio = portfolio):
     fig.update_layout(xaxis_title="Date", yaxis_title="Price", height = 1000)
     return fig
 
-
-def portratio(portfolio=portfolio):
+def portratio(portfolio):
     labels = portfolio.index
     values = portfolio.quantity*portfolio.average_price
     fig = px.pie(labels, values = values, names = labels)
