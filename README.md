@@ -1,7 +1,10 @@
 # SentimentAnalysisofStock
 Sentiment Analysis of any searched stocks using data scraped from twitter and popular news websites such as CNBC.
 
-# Twitter sentiment analysis report 
+# Reports
+- Twitter sentiment analysis report 
+- Twitter correlation report
+
 
 # Login Page
 - Allows you to login and store your individual portfolio using a relational database
