@@ -1,3 +1,7 @@
+https://share.streamlit.io/nurulislamz/paper-trading-app/main/app/dashboard.py
+Use this to access the site! Feel free to register with your own login and password, everything is current and working!
+Also, I am finally going to integrate this app into a full web application using javascript and the django framework! Should be done by the end of the 5/3/2022!
+
 # SentimentAnalysisofStock
 Sentiment Analysis of any searched stocks using data scraped from twitter and popular news websites such as CNBC.
 
