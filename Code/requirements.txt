@@ -1,9 +1,0 @@
-streamlit
-pandas
-plotly 
-requests
-tweepy
-yfinance
-datetime
-scipy
-regex
