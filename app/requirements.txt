@@ -10,4 +10,4 @@ regex
 bs4
 scipy
 numpy
-nltk.sentiment
+nltk
