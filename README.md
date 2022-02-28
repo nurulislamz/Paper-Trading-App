@@ -1,7 +1,13 @@
 # SentimentAnalysisofStock
 Sentiment Analysis of any searched stocks using data scraped from twitter and popular news websites such as CNBC.
 
-# Twitter sentiment analysis report 
+# Reports
+- Twitter sentiment analysis report 
+- Twitter correlation report
+
+
+# Login Page
+- Allows you to login and store your individual portfolio using a relational database
 
 # Search Page
 Functionality includes:
@@ -22,7 +28,6 @@ Functionality includes:
 
 # Financial Statement Page 
 - Utilises web scraping to display financial statement data from last 4 quarters for any ticker.
-
 
 # Upcoming Pages
 - Market Analysis
