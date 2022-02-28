@@ -1,7 +1,6 @@
 import streamlit as st
 import datetime as dt
 import regex as re
-import pandas as pd
 
 from usertable import userTable
 

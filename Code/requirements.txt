@@ -6,3 +6,4 @@ tweepy
 yfinance
 datetime
 scipy
+regex
