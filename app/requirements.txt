@@ -8,6 +8,6 @@ datetime
 scipy
 regex
 bs4
-nltk.sentiment.vader
 scipy
 numpy
+nltk.sentiment

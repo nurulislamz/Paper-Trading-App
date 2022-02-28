@@ -1,7 +1,6 @@
 # data cleaning
 import numpy as np 
 import pandas as pd 
-import datetime as dt # to get dates
 import streamlit as st
 
 # standardise sentiment data
