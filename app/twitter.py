@@ -1,5 +1,4 @@
 import twint 
-import yfinance as yf
 import pandas as pd
 import datetime as dt
 from nltk.sentiment.vader import SentimentIntensityAnalyzer

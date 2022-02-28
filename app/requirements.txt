@@ -2,8 +2,12 @@ streamlit
 pandas
 plotly 
 requests
-tweepy
+twint
 yfinance
 datetime
 scipy
 regex
+bs4
+nltk
+scipy
+numpy

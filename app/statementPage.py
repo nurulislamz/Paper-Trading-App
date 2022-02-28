@@ -1,8 +1,5 @@
 import pandas as pd 
-import datetime as dt # to get dates
-import numpy as np 
 import streamlit as st
-import plotly.graph_objects as go
 from bs4 import BeautifulSoup
 import requests
 
