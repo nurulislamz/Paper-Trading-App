@@ -1,13 +1,13 @@
 streamlit
 pandas
+numpy
 plotly 
 requests
+bs4
 twint
 yfinance
 datetime
 scipy
 regex
-bs4
 scipy
-numpy
 nltk

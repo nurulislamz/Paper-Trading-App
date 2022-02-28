@@ -1,19 +1,28 @@
+from email.policy import default
 import streamlit as st
 import regex as re
 
 from usertable import userTable
 
+def loginPage():
+    option = st.selectbox(label = "Do you have an account?", options = ["Login", "Sign Up"])
+    if option == "Login":
+        user = login()
+        if user:
+            return user
+    else:
+        signup()
 
 def login():
     st.title("Login")
-    username = st.text_input("Enter Username: ", key = "1")
-    password = st.text_input("Enter Password: ", type = 'password', key = "2")
+    username = st.text_input("Enter Username: ", key = "1", value="Testuser123")
+    password = st.text_input("Enter Password: ", type = 'password', key = "2", value="Abc123456")
     loginButton = st.button("Login", key = "3")
 
     if loginButton:
         username =  userTable().login_user(username, password)
         if username:
-            st.text("Logged in!")
+            st.text("Logged in! Click login again to enter app.")
             return username
         else:
             return False
@@ -73,11 +82,3 @@ def valid_password(password):
         st.text("Password Accepted")
         return True
 
-def loginPage():
-    option = st.selectbox(label = "Do you have an account?", options = ["Login", "Sign Up"])
-    if option == "Login":
-        user = login()
-        if user:
-            return user
-    else:
-        signup()

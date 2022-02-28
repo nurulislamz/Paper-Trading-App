@@ -52,5 +52,5 @@ if st.session_state.app_state:
 if not st.session_state.app_state:
     user = loginPage()
     if user:
-        st.session_state.app_state = True   
+        st.session_state.app_state = True
         st.session_state.user = user

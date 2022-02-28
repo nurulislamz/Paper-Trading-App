@@ -22,8 +22,8 @@ def portfolioPage():
     buy = d.button("Buy")
     sell = e.button("Sell")
 
-    portfolio = userPortfolio("nurul123")
-    balance = userData("nurul123")
+    portfolio = userPortfolio(st.session_state.user)
+    balance = userData(st.session_state.user)
 
     if validticker(ticker):
         if buy:
@@ -42,8 +42,8 @@ def portfolioPage():
     g.metric(label = "", value = " ")
     g.metric(label = "Deposit", value = "£" + (str(balance.view_user_deposit())))
     g.metric(label = "Balance", value = "£" + (str(balance.view_user_balance())))
-    g.metric(label = "Portfolio Value", value = "£" + (str(balance.portfolio_assets())))    
-    g.metric(label = "Return on Investment", value = (str(balance.roi())))
+    g.metric(label = "Portfolio Value", value = "£" + (str(round(balance.portfolio_assets(),2))))    
+    g.metric(label = "Return on Investment", value = (str( round(balance.roi(),2)*100 )) + "%")
     deposit = g.number_input('Deposit Money:', min_value=10, value=500, step=50) # Used for changing plot time scale in days
     balance.add_deposit(deposit)
     g.subheader("Recent Transactions: ")
