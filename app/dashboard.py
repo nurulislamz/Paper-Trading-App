@@ -1,4 +1,6 @@
 import streamlit as st
+import nltk
+nltk.download('vader-lexicon')
 
 from homePage import homePage
 from login import loginPage
