@@ -5,6 +5,7 @@ from login import loginPage
 from portfolioPage import portfolioPage
 from searchPage import searchPage
 from statementPage import statementPage
+import nltk_download_utils
 
 st.set_page_config(layout="wide")
 
