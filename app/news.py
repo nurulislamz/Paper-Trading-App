@@ -11,6 +11,8 @@ from bs4 import BeautifulSoup # parses html/xml web data
 import requests
 
 # sentiment analysis
+import nltk
+nltk.download('vader-lexicon')
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 class MarketWatch:
