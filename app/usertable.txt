@@ -1,2 +1,0 @@
-username,password,deposit,balance
-Testuser123,Abc123456,55000,55000
