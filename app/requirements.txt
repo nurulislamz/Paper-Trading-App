@@ -10,4 +10,4 @@ datetime
 scipy
 regex
 scipy
-nltk == 2.7
+nltk
