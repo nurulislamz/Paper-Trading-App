@@ -2,8 +2,6 @@ import twint
 import pandas as pd
 import datetime as dt
 
-import nltk
-nltk.download('vader-lexicon')
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 import numpy as np
